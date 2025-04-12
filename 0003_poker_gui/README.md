@@ -1,9 +1,10 @@
 # 2025 04 12
 
-main에는 최대한 gui관련만 넣어놓고
+main에는 최대한 gui관련만 넣어놓고/n
 deck_tracker랑 game_logic, utills에서
 
 함수 끌어다 쓰는거
+
 
 
 ico파일은 아이콘이고
