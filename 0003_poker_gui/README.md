@@ -1,3 +1,5 @@
+# 2025 04 12
+
 main에는 최대한 gui관련만 넣어놓고
 deck_tracker랑 game_logic, utills에서
 함수 끌어다 쓰는거
