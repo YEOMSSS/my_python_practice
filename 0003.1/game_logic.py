@@ -1,7 +1,7 @@
 import random
 from collections import Counter
 
-suits = ['♠', '♥', '♦', '♣']
+suits = ['♠', '♦', '♥', '♣']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 rank_order = {r: i for i, r in enumerate(ranks)}
 
@@ -72,16 +72,41 @@ def compare_hands(player_eval, bot_eval):
 
 def bot_replace(hand, deck):
     if not deck:
-        return hand
-    counts = Counter(card[:-1] for card in hand)
-    most_common = counts.most_common(1)
-    if most_common and most_common[0][1] >= 2:
-        keep = most_common[0][0]
-        new_hand = [c for c in hand if c[:-1] == keep]
-        while len(new_hand) < 5 and deck:
+        return hand[:]
+
+    hand_eval = evaluate_hand(hand)
+    hand_name, score, _ = hand_eval
+    ranks_in_hand = [card[:-1] for card in hand]
+    counter = Counter(ranks_in_hand)
+
+    keep_indices = set()
+
+    if score <= 6:
+        return hand[:]
+
+    elif hand_name == "Three of a Kind":
+        three_rank = [r for r, c in counter.items() if c == 3][0]
+        keep_indices = {i for i, c in enumerate(hand) if c[:-1] == three_rank}
+
+    elif hand_name == "Two Pair":
+        pair_ranks = [r for r, c in counter.items() if c == 2]
+        keep_indices = {i for i, c in enumerate(hand) if c[:-1] in pair_ranks}
+
+    elif hand_name == "One Pair":
+        pair_rank = [r for r, c in counter.items() if c == 2][0]
+        keep_indices = {i for i, c in enumerate(hand) if c[:-1] == pair_rank}
+
+    elif hand_name == "High Card":
+        max_rank = max(hand, key=lambda c: rank_order[c[:-1]])
+        keep_indices = {i for i, c in enumerate(hand) if c == max_rank}
+
+    new_hand = []
+    for i in range(5):
+        if i in keep_indices:
+            new_hand.append(hand[i])
+        elif deck:
             new_hand.append(deck.pop())
-    else:
-        new_hand = hand[:]
-        for i in random.sample(range(5), min(3, len(deck))):
-            new_hand[i] = deck.pop()
-    return new_hand
+        else:
+            new_hand.append(hand[i])
+
+    return sort_hand(new_hand)

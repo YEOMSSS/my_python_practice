@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from game_logic import create_deck
-from utils import get_card_color
+import utils
 
 def show_deck_status(root, deck, player_hand=[]):
     if not deck:
@@ -19,8 +19,8 @@ def show_deck_status(root, deck, player_hand=[]):
     used_cards = set(full_deck) - set(deck)
     player_hand_set = set(player_hand)
 
-    suits = ['♠', '♥', '♦', '♣']
-    ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+    suits = ['♠', '♦', '♥', '♣']
+    ranks = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2']
 
     table_frame = tk.Frame(top, bg="darkgreen")
     table_frame.pack(expand=True, pady=20)
@@ -39,13 +39,13 @@ def show_deck_status(root, deck, player_hand=[]):
             card = rank + suit
             if card in player_hand_set:
                 bg_color = "yellow"
-                fg_color = get_card_color(card)
+                fg_color = utils.get_card_color(card)
             elif card in used_cards:
                 bg_color = "white"
                 fg_color = "gray"
             else:
                 bg_color = "white"
-                fg_color = get_card_color(card)
+                fg_color = utils.get_card_color(card)
 
             label = tk.Label(table_frame, text=card, font=("Courier", 20, "bold"),
                              width=4, height=2, relief="ridge", bd=2,
