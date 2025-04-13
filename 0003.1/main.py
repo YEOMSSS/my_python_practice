@@ -204,12 +204,28 @@ def show_result():
     global bot_hand
     pe, be = evaluate_hand(player_hand), evaluate_hand(bot_hand)
     result = compare_hands(pe, be)
-    result_text = f"Player: {pe[0]}\nBot: {be[0]}\n"
+    player_summary = format_hand_summary(pe[0], pe[2])
+    bot_summary = format_hand_summary(be[0], be[2])
+    result_text = f"Player: {player_summary}\nBot: {bot_summary}\n"
     result_text += "🎉 Player 승리!" if result == "player" else "🤖 Bot 승리!" if result == "bot" else "무승부!"
     message_label.config(text=result_text)
     replace_button.config(state="disabled")
     result_button.config(state="disabled")
     show_bot_hand()
     update_deck_count()
+
+def format_hand_summary(name, values):
+    rank_map = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+    readable = [rank_map[v] for v in values]
+    if name == "Full House":
+        return f"{name} ({readable[0]})"
+    elif name in ["One Pair", "Three of a Kind", "Four of a Kind"]:
+        return f"{name} ({readable[0]})"
+    elif name == "Two Pair":
+        return f"{name} ({readable[0]} & {readable[1]})"
+    elif name in ["High Card", "Flush", "Straight", "Straight Flush", "Royal Flush"]:
+        return f"{name} ({readable[0]})"
+    else:
+        return name
 
 root.mainloop()
