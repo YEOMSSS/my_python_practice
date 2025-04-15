@@ -1,18 +1,20 @@
-# deck_tracker.py (업데이트됨)
-
 import tkinter as tk
 from game_logic import create_deck
 import utils
+import ui_style  # ✅ 테마 딕셔너리
 
+# 📦 현재 덱의 상태를 팝업 창으로 시각화하여 보여줍니다.
+# 사용된 카드, 플레이어 손패, 남은 카드를 색상으로 구분해 표시합니다.
 def show_deck_status(root, deck, player_hand=[]):
+    style = ui_style.current_theme
     if not deck:
         return
 
     top = tk.Toplevel(root)
     top.title("현재 덱 현황")
-    top.configure(bg="darkgreen")
+    top.configure(bg=style["TABLE_BG"])
 
-    width, height = 1100, 400
+    width, height = 900, 300
     top.geometry(f"{width}x{height}+{root.winfo_x() + 100}+{root.winfo_y() + 100}")
 
     full_deck = create_deck()
@@ -22,32 +24,28 @@ def show_deck_status(root, deck, player_hand=[]):
     suits = ['♠', '♦', '♥', '♣']
     ranks = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2']
 
-    table_frame = tk.Frame(top, bg="darkgreen")
+    table_frame = tk.Frame(top, bg=style["TABLE_BG"])
     table_frame.pack(expand=True, pady=20)
 
-    for j, rank in enumerate(ranks):
-        label = tk.Label(table_frame, text=rank, font=("Arial", 12, "bold"),
-                         bg="darkgreen", fg="white", width=4, pady=5)
-        label.grid(row=0, column=j + 1)
-
     for i, suit in enumerate(suits):
-        suit_label = tk.Label(table_frame, text=suit, font=("Arial", 14, "bold"),
-                              bg="darkgreen", fg="white", width=2)
-        suit_label.grid(row=i + 1, column=0, padx=5)
-
         for j, rank in enumerate(ranks):
             card = rank + suit
             if card in player_hand_set:
                 bg_color = "yellow"
                 fg_color = utils.get_card_color(card)
             elif card in used_cards:
-                bg_color = "white"
+                bg_color = style["CARD_BG"]
                 fg_color = "gray"
             else:
-                bg_color = "white"
+                bg_color = style["CARD_BG"]
                 fg_color = utils.get_card_color(card)
 
-            label = tk.Label(table_frame, text=card, font=("Courier", 20, "bold"),
-                             width=4, height=2, relief="ridge", bd=2,
-                             bg=bg_color, fg=fg_color)
-            label.grid(row=i + 1, column=j + 1, padx=2, pady=2)
+            # 카드 셀 (정사각형 고정)
+            cell = tk.Frame(table_frame, width=60, height=60, bg=style["TABLE_BG"])
+            cell.propagate(False)
+            cell.grid(row=i, column=j, padx=2, pady=2)
+
+            label = tk.Label(cell, text=card, font=style["DECK_FONT"],
+                             bg=bg_color, fg=fg_color,
+                             relief="ridge", bd=2)
+            label.pack(fill="both", expand=True)
