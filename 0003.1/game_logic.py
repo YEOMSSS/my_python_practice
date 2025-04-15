@@ -1,19 +1,25 @@
 import random
 from collections import Counter
 
+# ♠ 카드 무늬와 숫자 정의
 suits = ['♠', '♦', '♥', '♣']
 ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 rank_order = {r: i for i, r in enumerate(ranks)}
 
+# 🃏 52장의 전체 덱을 생성합니다.
 def create_deck():
     return [r + s for s in suits for r in ranks]
 
+# 📤 덱에서 n장의 카드를 꺼내 손패를 만듭니다.
 def deal_hand(deck, n=5):
     return [deck.pop() for _ in range(n)]
 
+# 🔢 손패를 rank 기준으로 내림차순 정렬합니다.
 def sort_hand(hand):
     return sorted(hand, key=lambda c: rank_order[c[:-1]], reverse=True)
 
+# 🧠 주어진 손패의 족보를 분석하고 점수를 매깁니다.
+# 반환: (족보 이름, 우선순위 숫자, 비교용 랭크 리스트)
 def evaluate_hand(hand):
     ranks_sorted = sorted([rank_order[c[:-1]] for c in hand], reverse=True)
     suits_ = [c[-1] for c in hand]
@@ -25,6 +31,7 @@ def evaluate_hand(hand):
     is_flush = len(set(suits_)) == 1
     is_straight = len(unique_ranks) == 5 and unique_ranks[-1] - unique_ranks[0] == 4
 
+    # A-2-3-4-5 스트레이트 처리
     if set(ranks_sorted) == {12, 0, 1, 2, 3}:
         is_straight = True
         ranks_sorted = [3, 2, 1, 0, -1]
@@ -60,6 +67,8 @@ def evaluate_hand(hand):
     else:
         return "High Card", 10, ranks_sorted
 
+# ⚔️ 플레이어와 봇의 족보 결과를 비교합니다.
+# 반환: "player", "bot", "tie"
 def compare_hands(player_eval, bot_eval):
     _, ps, pv = player_eval
     _, bs, bv = bot_eval
@@ -70,6 +79,7 @@ def compare_hands(player_eval, bot_eval):
             return "player" if p > b else "bot"
     return "tie"
 
+# 🤖 봇이 자신의 핸드를 평가하고, 전략적으로 일부 카드만 교체합니다.
 def bot_replace(hand, deck):
     if not deck:
         return hand[:]
@@ -81,6 +91,7 @@ def bot_replace(hand, deck):
 
     keep_indices = set()
 
+    # 좋은 족보는 유지
     if score <= 6:
         return hand[:]
 

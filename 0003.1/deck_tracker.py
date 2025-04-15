@@ -3,6 +3,8 @@ from game_logic import create_deck
 import utils
 import ui_style  # ✅ 테마 딕셔너리
 
+# 📦 현재 덱의 상태를 팝업 창으로 시각화하여 보여줍니다.
+# 사용된 카드, 플레이어 손패, 남은 카드를 색상으로 구분해 표시합니다.
 def show_deck_status(root, deck, player_hand=[]):
     style = ui_style.current_theme
     if not deck:
