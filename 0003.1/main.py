@@ -2,6 +2,8 @@ import tkinter as tk
 import random
 from functools import partial
 
+from ui_layout import render_player_hand, render_bot_back, render_bot_hand
+
 import ui_style
 style = ui_style.current_theme
 
@@ -9,12 +11,18 @@ from game_logic import (
     create_deck, deal_hand, sort_hand,
     evaluate_hand, compare_hands, bot_replace
 )
-from utils import get_card_color, color_mode
-from deck_tracker import show_deck_status
-from speed_control import open_speed_control
-from ui_layout import render_player_hand, render_bot_back, render_bot_hand
 
-from ui_style import toggle_theme
+from utils import get_card_color, color_mode
+
+from deck_tracker import show_deck_status
+from deck_tracker import refresh_if_open as refresh_deck_ui
+from deck_tracker import update_deck_ui
+
+from speed_control import open_speed_control
+
+from game_log import log_event, open_log_window, update_log_ui, log_window, refresh_if_open
+from game_log import refresh_if_open as refresh_log_ui
+
 
 selected_cards = []
 player_hand, bot_hand, deck = [], [], []
@@ -69,6 +77,8 @@ def toggle_color_mode():
         else:
             render_bot_back(bot_frame)
     message_label.config(text="🎨 색상 강조 ON" if utils.color_mode else "🎨 색상 강조 OFF")
+    refresh_log_ui()
+    refresh_deck_ui()
 
 # 🤖 봇 핸드의 가시성을 토글합니다.
 # 봇 핸드를 오픈하거나 뒷면으로 감춥니다.
@@ -102,7 +112,7 @@ def apply_theme_refresh():
     ui_style.toggle_theme()
     style = ui_style.current_theme  # 새 테마 적용
 
-    # 🌀 스타일 재적용
+    # 스타일 재적용
     root.configure(bg=style["TABLE_BG"])
     main_frame.configure(bg=style["TABLE_BG"])
     card_frame.configure(bg=style["TABLE_BG"])
@@ -111,7 +121,7 @@ def apply_theme_refresh():
     action_button_frame.configure(bg=style["TABLE_BG"])
     message_label.configure(bg=style["TABLE_BG"], fg=style["TEXT_COLOR"])
 
-    # 버튼 재생성
+    # 카드/봇 핸드 다시 그리기
     update_cards()
     if game_in_progress and result_button["state"] == "normal":
         if bot_visible_var.get():
@@ -119,11 +129,20 @@ def apply_theme_refresh():
         else:
             render_bot_back(bot_frame)
 
+    # 🔁 로그창이 열려 있으면 테마 적용
+    refresh_if_open()
+    refresh_deck_ui()
+
     message_label.config(text="🌗 테마 변경됨!")
+
 
 # 토글 버튼 추가 (tool_button_frame에)
 tk.Button(tool_button_frame, text="🌗 테마 전환",
           command=apply_theme_refresh,
+          bg="dim gray", fg="white", font=("Arial", 11, "bold")).pack(side="left", padx=5)
+
+tk.Button(tool_button_frame, text="📜 로그 보기",
+          command=lambda: open_log_window(root),
           bg="dim gray", fg="white", font=("Arial", 11, "bold")).pack(side="left", padx=5)
 
 
@@ -181,6 +200,7 @@ def start_game():
     player_hand = sort_hand(deal_hand(deck))
     bot_hand = sort_hand(deal_hand(deck))
     update_cards()
+    log_event("게임 시작", player_hand)
     if bot_visible_var.get():
         render_bot_hand(bot_frame, bot_hand, bot_card_labels, root)
     else:
@@ -214,6 +234,8 @@ def replace_cards():
     if not deck:
         replace_button.config(state="disabled")
     update_deck_count()
+    log_event("카드 바꿈", player_hand)
+    update_deck_ui(deck, player_hand, refresh_cache=True)
 
 # 🏁 플레이어와 봇의 패를 비교하고 결과를 보여줍니다.
 def show_result():

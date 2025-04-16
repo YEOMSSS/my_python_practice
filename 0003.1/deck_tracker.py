@@ -3,19 +3,57 @@ from game_logic import create_deck
 import utils
 import ui_style  # ✅ 테마 딕셔너리
 
+status_window = None  # 전역 참조
+_cached_deck = []
+_cached_hand = []
+
+# 🔄 테마 변경 시 열려 있는 덱 창 갱신
+def refresh_if_open():
+    if status_window and status_window.winfo_exists():
+        update_deck_ui()
+
 # 📦 현재 덱의 상태를 팝업 창으로 시각화하여 보여줍니다.
 # 사용된 카드, 플레이어 손패, 남은 카드를 색상으로 구분해 표시합니다.
 def show_deck_status(root, deck, player_hand=[]):
-    style = ui_style.current_theme
+    global status_window, _cached_deck, _cached_hand
     if not deck:
         return
 
-    top = tk.Toplevel(root)
-    top.title("현재 덱 현황")
-    top.configure(bg=style["TABLE_BG"])
+    if status_window and status_window.winfo_exists():
+        status_window.lift()
+        return
 
-    width, height = 900, 300
-    top.geometry(f"{width}x{height}+{root.winfo_x() + 100}+{root.winfo_y() + 100}")
+    style = ui_style.current_theme
+    status_window = tk.Toplevel(root)
+    status_window.title("현재 덱 현황")
+    status_window.geometry(f"900x300+{root.winfo_x() + 100}+{root.winfo_y() + 100}")
+
+    _cached_deck = deck[:]
+    _cached_hand = player_hand[:]
+
+    update_deck_ui(deck, player_hand)
+
+# ♻️ 테마 변경 또는 상태 업데이트용 렌더링 함수
+def update_deck_ui(deck=None, player_hand=None, *, refresh_cache=False):
+    global _cached_deck, _cached_hand
+    style = ui_style.current_theme
+
+    if not status_window or not status_window.winfo_exists():
+        return
+
+    status_window.configure(bg=style["TABLE_BG"])
+
+    for widget in status_window.winfo_children():
+        widget.destroy()
+
+    if refresh_cache:
+        if deck is not None:
+            _cached_deck[:] = deck
+        if player_hand is not None:
+            _cached_hand[:] = player_hand
+
+    deck = deck or _cached_deck
+    player_hand = player_hand or _cached_hand
 
     full_deck = create_deck()
     used_cards = set(full_deck) - set(deck)
@@ -24,7 +62,7 @@ def show_deck_status(root, deck, player_hand=[]):
     suits = ['♠', '♦', '♥', '♣']
     ranks = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2']
 
-    table_frame = tk.Frame(top, bg=style["TABLE_BG"])
+    table_frame = tk.Frame(status_window, bg=style["TABLE_BG"])
     table_frame.pack(expand=True, pady=20)
 
     for i, suit in enumerate(suits):
