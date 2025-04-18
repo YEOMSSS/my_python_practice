@@ -1,6 +1,52 @@
+
 import tkinter as tk
 import random
+import json
+import os
+
+# Custom Tooltip class with delay
+class Tooltip:
+    def __init__(self, widget, text, delay=300):
+        self.widget = widget
+        self.text = text
+        self.tipwindow = None
+        self.delay = delay
+        self._after_id = None
+        widget.bind("<Enter>", self.schedule)
+        widget.bind("<Leave>", self.cancel)
+
+    def schedule(self, event=None):
+        self._after_id = self.widget.after(self.delay, self.show)
+
+    def cancel(self, event=None):
+        if self._after_id:
+            self.widget.after_cancel(self._after_id)
+            self._after_id = None
+        self.hide()
+
+    def show(self):
+        if self.tipwindow or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 50
+        y = self.widget.winfo_rooty() + 30
+        self.tipwindow = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(tw, text=self.text, justify=tk.LEFT,
+                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                         font=("Arial", 10))
+        label.pack(ipadx=1)
+
+    def hide(self):
+        if self.tipwindow:
+            self.tipwindow.destroy()
+            self.tipwindow = None
+
 from scorer import explain_score
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, "jamo_point_table.json"), encoding="utf-8") as f:
+    point_table = json.load(f)
 
 CHOSUNG_LIST = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
 JUNGSUNG_LIST = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ']
@@ -11,7 +57,8 @@ double_finals = {
     ('ㄱ', 'ㅅ'): 'ㄳ', ('ㄴ', 'ㅈ'): 'ㄵ', ('ㄴ', 'ㅎ'): 'ㄶ',
     ('ㄹ', 'ㄱ'): 'ㄺ', ('ㄹ', 'ㅁ'): 'ㄻ', ('ㄹ', 'ㅂ'): 'ㄼ',
     ('ㄹ', 'ㅅ'): 'ㄽ', ('ㄹ', 'ㅌ'): 'ㄾ', ('ㄹ', 'ㅍ'): 'ㄿ',
-    ('ㄹ', 'ㅎ'): 'ㅀ', ('ㅂ', 'ㅅ'): 'ㅄ'
+    ('ㄹ', 'ㅎ'): 'ㅀ', ('ㅂ', 'ㅅ'): 'ㅄ',
+    ('ㄱ', 'ㄱ'): 'ㄲ', ('ㅅ', 'ㅅ'): 'ㅆ'
 }
 compound_vowel_sets = {
     frozenset(['ㅗ', 'ㅏ']): 'ㅘ', frozenset(['ㅗ', 'ㅏ', 'ㅣ']): 'ㅙ',
@@ -32,6 +79,8 @@ cho_stack = [current['초성']]
 jung_stack = [current['중성']]
 jong_stack = []
 visual_labels = []
+
+
 
 def combine_syllable():
     cho = CHOSUNG_LIST.index(current['초성'])
@@ -92,7 +141,8 @@ def update_status():
 
 def update_result_window():
     result_label.config(text=combine_syllable())
-    score, _, formula = explain_score(current['초성'], current['중성'], current['종성'])
+    jamo_stack = cho_stack + jung_stack + jong_stack
+    score, explanation, formula = explain_score(jamo_stack)
     score_label.config(text=f"점수: {score}")
     formula_label.config(text=formula)
 
@@ -117,16 +167,22 @@ def sorted_stack_for_display(part, stack):
     return stack
 
 def update_visual_stack():
+    from scorer import point_table
     parts = cho_stack + sorted_stack_for_display('중성', jung_stack) + sorted_stack_for_display('종성', jong_stack)
     labels = ['초성'] * len(cho_stack) + ['중성'] * len(jung_stack) + ['종성'] * len(jong_stack)
+    
     for i in range(7):
         text = parts[i] if i < len(parts) else ''
         if i < len(labels):
             part_type = labels[i]
             color = {'초성': 'red', '중성': 'blue', '종성': 'green'}.get(part_type, 'black')
+            score = f"+{point_table.get(text, 0)}" if text else ''
         else:
             color = 'black'
+            score = ''
         visual_labels[i].config(text=text, fg=color)
+        score_visual_labels[i].config(text=score, fg=color)
+    
 
 def refresh_choices():
     for widget in choice_frame.winfo_children():
@@ -134,13 +190,14 @@ def refresh_choices():
     base = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ',
             'ㅏ','ㅓ','ㅗ','ㅜ','ㅡ','ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ']
     for i, j in enumerate(random.sample(base, 9)):
-        tk.Button(choice_frame, text=j, width=6, height=2, font=('Arial', 16),
-                  command=lambda val=j: select_jamo(val)).grid(row=i//3, column=i%3, padx=5, pady=5)
+        btn = tk.Button(choice_frame, text=j, width=6, height=2, font=('Arial', 16),
+                        command=lambda val=j: select_jamo(val))
+        btn.grid(row=i//3, column=i%3, padx=5, pady=5)
+        point = point_table.get(j, 1)
+        Tooltip(btn, f"{j}: {point}점")
 
 root = tk.Tk()
 root.title("한글 자모 진화 게임")
-root.attributes("-fullscreen", True)
-
 main_frame = tk.Frame(root)
 main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -153,12 +210,24 @@ score_label.grid(row=1, column=0)
 formula_label = tk.Label(main_frame, text="", font=('Arial', 14), fg="gray20")
 formula_label.grid(row=2, column=0, pady=5)
 
+score_visual_labels = []
+visual_labels = []
+
 visual_frame = tk.Frame(main_frame)
 visual_frame.grid(row=3, column=0, pady=5)
+
 for _ in range(7):
-    lbl = tk.Label(visual_frame, text='', width=3, height=1, font=('Arial', 20), relief='groove')
-    lbl.pack(side=tk.LEFT, padx=3)
-    visual_labels.append(lbl)
+    col_frame = tk.Frame(visual_frame)
+    col_frame.pack(side=tk.LEFT, padx=5)
+
+    score_lbl = tk.Label(col_frame, text='', width=3, height=1, font=('Arial', 10))
+    score_lbl.pack()
+
+    visual_lbl = tk.Label(col_frame, text='', width=3, height=1, font=('Arial', 20), relief='groove')
+    visual_lbl.pack()
+
+    score_visual_labels.append(score_lbl)
+    visual_labels.append(visual_lbl)
 
 tk.Label(main_frame, text="초성/중성/종성을 선택 후 자모를 고르세요", font=("Arial", 12)).grid(row=4, column=0, pady=10)
 
@@ -176,7 +245,14 @@ choice_frame.grid(row=7, column=0, pady=20)
 def exit_fullscreen(event=None):
     root.attributes("-fullscreen", False)
 
+is_fullscreen = False
+def toggle_fullscreen(event=None):
+    global is_fullscreen
+    is_fullscreen = not is_fullscreen
+    root.attributes("-fullscreen", is_fullscreen)
+
 root.bind("<Escape>", exit_fullscreen)
+root.bind("<F11>", toggle_fullscreen)
 
 update_status()
 update_visual_stack()
