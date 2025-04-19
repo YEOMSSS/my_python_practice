@@ -1,9 +1,11 @@
-
-# scorer.py
-
+import json
+import os
 from synergy import apply_synergy
 
-# 복합 자모 분해 함수 (점수 계산에 사용함)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, "jamo_point_table.json"), encoding="utf-8") as f:
+    point_table = json.load(f)
+
 def decompose_if_needed(jamo):
     decompose_map = {
         'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'], 'ㅚ': ['ㅗ', 'ㅣ'],
@@ -17,21 +19,6 @@ def decompose_if_needed(jamo):
     }
     return decompose_map.get(jamo, [jamo])
 
-# 자모별 점수 정의
-point_table = {
-    # 기본 자음 (1점)
-    'ㄱ': 1, 'ㄴ': 1, 'ㅁ': 1, 'ㅅ': 1, 'ㅇ': 1,
-    # 가획 1회 자음 (2점)
-    'ㄷ': 2, 'ㅂ': 2, 'ㅈ': 2, 'ㅋ': 2,
-    # 가획 2회 자음 (3점)
-    'ㅊ': 3, 'ㅌ': 3, 'ㅍ': 3, 'ㅎ': 3,
-    # ㄹ (독립 점수)
-    'ㄹ': 4,
-    # 모음 (3점)
-    'ㅏ': 3, 'ㅑ': 3, 'ㅓ': 3, 'ㅕ': 3, 'ㅗ': 3, 'ㅛ': 3,
-    'ㅜ': 3, 'ㅠ': 3, 'ㅡ': 3, 'ㅣ': 3
-}
-
 def calculate_score(jamo_stack):
     total = 0
     decomposed = []
@@ -39,34 +26,31 @@ def calculate_score(jamo_stack):
         decomposed.extend(decompose_if_needed(j))
     for d in decomposed:
         total += point_table.get(d, 1)
-    final_score, _ = apply_synergy(decomposed, total * len(decomposed))
+    final_score, _, _, _ = apply_synergy(jamo_stack, total * len(decomposed))
     return final_score
 
 def explain_score(jamo_stack):
-    explanation = []
     total = 0
     decomposed = []
     for j in jamo_stack:
         decomposed.extend(decompose_if_needed(j))
     for d in decomposed:
-        pt = point_table.get(d, 1)
-        total += pt
-        explanation.append(f"{d}: +{pt}")
+        total += point_table.get(d, 1)
     base_count = len(decomposed)
     score_before_synergy = total * base_count if base_count else 0
-    final_score, synergy_descriptions = apply_synergy(decomposed, score_before_synergy)
-    if base_count:
-        explanation.append(f"자모 {base_count}개 사용 보너스: x{base_count}")
-        explanation.extend(synergy_descriptions)
-        formula = f"({total}) × {base_count}" + (" × " + " × ".join([d.split('×')[1] for d in synergy_descriptions]) if synergy_descriptions else "") + f" = {final_score}"
-    else:
-        final_score = 0
-        formula = "0점"
-    return final_score, explanation, formula
+    final_score, synergy_descriptions, total_multiplier, total_bonus = apply_synergy(jamo_stack, score_before_synergy)
 
-# 디버그 테스트
+    formula = f"({total}) × {base_count}"
+    if total_multiplier != 1.0:
+        formula += f" × {total_multiplier:.2f}"
+    if total_bonus:
+        formula += f" + {total_bonus}"
+    formula += f" = {final_score}"
+
+    return final_score, synergy_descriptions, formula
+
 if __name__ == '__main__':
-    example = ['ㄱ', 'ㄴ', 'ㅁ', 'ㅗ', 'ㅣ', 'ㄹ', 'ㄱ']
+    example = ['ㄱ', 'ㄱ', 'ㅏ', 'ㅣ']
     score, details, formula = explain_score(example)
     print(f"{example} => {score}점")
     for line in details:

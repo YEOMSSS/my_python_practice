@@ -145,6 +145,7 @@ def update_result_window():
     score, explanation, formula = explain_score(jamo_stack)
     score_label.config(text=f"점수: {score}")
     formula_label.config(text=formula)
+    synergy_label.config(text="\n".join(explanation[-5:]))
 
 def sorted_stack_for_display(part, stack):
     compound_display_order = {
@@ -210,6 +211,9 @@ score_label.grid(row=1, column=0)
 formula_label = tk.Label(main_frame, text="", font=('Arial', 14), fg="gray20")
 formula_label.grid(row=2, column=0, pady=5)
 
+synergy_label = tk.Label(main_frame, text="", font=("Arial", 12), fg="purple")
+synergy_label.grid(row=8, column=0, pady=5)
+
 score_visual_labels = []
 visual_labels = []
 
@@ -258,5 +262,33 @@ update_status()
 update_visual_stack()
 refresh_choices()
 update_result_window()
+
+
+# 시너지 정보 프레임
+synergy_info_frame = tk.Frame(root, bg='white', bd=2, relief='solid')
+synergy_info_frame.place_forget()
+
+synergy_text = tk.Text(synergy_info_frame, width=60, height=20, wrap="word", font=("Arial", 10))
+synergy_text.pack(padx=10, pady=10)
+
+
+def toggle_synergy_info():
+    if synergy_info_frame.winfo_ismapped():
+        synergy_info_frame.place_forget()
+    else:
+        synergy_info_frame.place(relx=0.5, rely=0.5, anchor="center")
+        synergy_text.delete("1.0", tk.END)
+        try:
+            with open(os.path.join(BASE_DIR, "synergy_rules.json"), encoding="utf-8") as f:
+                rules = json.load(f)
+            for r in rules:
+                synergy_text.insert(tk.END, f"• {r['desc']}\n")
+                if 'condition_desc' in r and r['condition_desc']:
+                    synergy_text.insert(tk.END, f"   └ 조건: {r['condition_desc']}\n\n")
+        except Exception as e:
+            synergy_text.insert(tk.END, f"시너지 정보를 불러올 수 없습니다: {e}")
+
+synergy_btn = tk.Button(main_frame, text='📘 시너지 보기', command=toggle_synergy_info)
+synergy_btn.grid(row=9, column=0, pady=10)
 
 root.mainloop()

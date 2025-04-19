@@ -1,21 +1,56 @@
 
-# synergy.py
+import json
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, "synergy_rules.json"), encoding="utf-8") as f:
+    synergy_rules = json.load(f)
+
+def match_condition(condition, jamo, index, jamo_stack, context):
+    if condition == "is_first":
+        return index == 0
+    elif condition == "alone":
+        return jamo_stack.count(jamo) == 1
+    elif condition == "no_synergy":
+        return not context.get("has_synergy", False)
+    elif condition == "has_all_parts":
+        return context.get("has_cho") and context.get("has_jung") and context.get("has_jong")
+    elif condition.startswith("includes:"):
+        target = condition.split(":")[1]
+        return target in jamo_stack
+    return False
 
 def apply_synergy(jamo_stack, base_score):
-    bonus_multiplier = 1
-    description = []
+    total_multiplier = 1.0
+    total_bonus = 0
+    descriptions = []
 
-    # 시너지 1: 기본자 3개 이상
-    base_roots = {'ㄱ', 'ㄴ', 'ㅁ', 'ㅅ', 'ㅇ'}
-    base_root_count = sum(1 for j in jamo_stack if j in base_roots)
-    if base_root_count >= 3:
-        bonus_multiplier *= 2
-        description.append("기본자 3개 이상 시너지 ×2")
+    has_cho = len(jamo_stack) > 0
+    has_jung = len(jamo_stack) > 1
+    has_jong = len(jamo_stack) > 2
 
-    # 향후 시너지 추가 예정
-    # 예시:
-    # if {'ㄹ', 'ㅣ'} <= set(jamo_stack):
-    #     bonus_multiplier *= 1.5
-    #     description.append("ㄹ + ㅣ 시너지 ×1.5")
+    for i, jamo in enumerate(jamo_stack):
+        for rule in synergy_rules:
+            if rule["target"] != jamo:
+                continue
 
-    return base_score * bonus_multiplier, description
+            context = {
+                "has_synergy": True,
+                "has_cho": has_cho,
+                "has_jung": has_jung,
+                "has_jong": has_jong
+            }
+
+            matched = True
+            for cond in rule.get("conditions", []):
+                if not match_condition(cond, jamo, i, jamo_stack, context):
+                    matched = False
+                    break
+
+            if matched:
+                total_multiplier *= rule.get("multiplier", 1.0)
+                total_bonus += rule.get("bonus", 0)
+                descriptions.append(rule["desc"])
+
+    final_score = int(base_score * total_multiplier + total_bonus)
+    return final_score, descriptions, total_multiplier, total_bonus

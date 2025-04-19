@@ -1,0 +1,12 @@
+[
+  {
+    "target": "ㄱ",
+    "conditions": [
+      "is_first"
+    ],
+    "multiplier": 2.0,
+    "bonus": 0,
+    "desc": "선두 ㄱ 배수 ×2",
+    "condition_desc": "글자가 ㄱ으로 시작할 때"
+  }
+]
