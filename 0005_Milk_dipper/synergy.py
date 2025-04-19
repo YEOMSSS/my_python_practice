@@ -18,8 +18,12 @@ def match_condition(condition, jamo, index, jamo_stack, context):
     elif condition.startswith("includes:"):
         target = condition.split(":")[1]
         return target in jamo_stack
+    elif condition.startswith("group_includes:"):
+        _, group_str, threshold = condition.split(":")
+        group = list(group_str)
+        count = sum(1 for g in group if g in jamo_stack)
+        return count >= int(threshold)
     return False
-
 def apply_synergy(jamo_stack, base_score):
     total_multiplier = 1.0
     total_bonus = 0
