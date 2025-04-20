@@ -1,59 +1,41 @@
 [
   {
-    "target": "ㄱ",
-    "conditions": [
-      "is_first"
-    ],
+    "conditions": ["is_first:ㄱ"],
     "multiplier": 2.0,
     "bonus": 0,
     "desc": "선두 ㄱ 배수 ×2",
     "condition_desc": "글자가 ㄱ으로 시작할 때"
   },
   {
-    "target": "ㄱ",
-    "conditions": [
-      "group_includes:ㄱㅋ:2"
-    ],
+    "conditions": ["group_includes:ㄱㅋ:2"],
     "multiplier": 3.0,
     "bonus": 0,
     "desc": "ㄱ파생시너지 ×3",
     "condition_desc": "ㄱ·ㅋ 중 2개 이상 포함 시"
   },
   {
-    "target": "ㄴ",
-    "conditions": [
-      "group_includes:ㄴㄷㅌ:2"
-    ],
+    "conditions": ["group_includes:ㄴㄷㅌ:2"],
     "multiplier": 2.5,
     "bonus": 0,
     "desc": "ㄴ파생시너지 ×2.5",
     "condition_desc": "ㄴ·ㄷ·ㅌ 중 2개 이상 포함 시"
   },
   {
-    "target": "ㅁ",
-    "conditions": [
-      "group_includes:ㅁㅂㅍ:2"
-    ],
+    "conditions": ["group_includes:ㅁㅂㅍ:2"],
     "multiplier": 2.5,
     "bonus": 0,
     "desc": "ㅁ파생시너지 ×2.5",
     "condition_desc": "ㅁ·ㅂ·ㅍ 중 2개 이상 포함 시"
   },
   {
-    "target": "ㅅ",
-    "conditions": [
-      "group_includes:ㅅㅈㅊ:2"
-    ],
+    "conditions": ["group_includes:ㅅㅈㅊ:2"],
     "multiplier": 2.5,
     "bonus": 0,
     "desc": "ㅅ파생시너지 ×2.5",
     "condition_desc": "ㅅ·ㅈ·ㅊ 중 2개 이상 포함 시"
   },
   {
-    "target": "ㅇ",
-    "conditions": [
-      "group_includes:ㅇㅎ:2"
-    ],
+    "conditions": ["group_includes:ㅇㅎ:2"],
     "multiplier": 2.0,
     "bonus": 0,
     "desc": "ㅇ파생시너지 ×2",
