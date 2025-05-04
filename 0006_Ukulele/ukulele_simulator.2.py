@@ -1,9 +1,9 @@
-
 import tkinter as tk
 import pygame
 import numpy as np
 import wave
 import os
+import tempfile
 
 # Initialize mixer
 pygame.mixer.init(frequency=44100, size=-16, channels=1)
@@ -40,7 +40,8 @@ def generate_tone(frequency, duration=0.8, volume=0.4):  # sustained sound
     sample_rate = 44100
     n_samples = int(sample_rate * duration)
     buf = (np.sin(2 * np.pi * np.arange(n_samples) * frequency / sample_rate) * 32767 * volume).astype(np.int16)
-    filename = f"tone_{int(frequency)}Hz_{int(duration*1000)}ms.wav"
+
+    filename = os.path.join(tempfile.gettempdir(), f"tone_{int(frequency)}Hz_{int(duration*1000)}ms.wav")
     if filename not in sound_cache:
         with wave.open(filename, 'w') as f:
             f.setnchannels(1)
@@ -54,7 +55,7 @@ strings = {
     1: StringState(1, 261.6),
     2: StringState(2, 329.6),
     3: StringState(3, 440.0)
-} 
+}
 
 key_map = {
     '1': (1, None), '4': (2, None), '7': (3, None),
@@ -103,7 +104,7 @@ def key_release(event):
             string.fret = None
 
 root = tk.Tk()
-root.title("Ukulele")
+root.title("Ukulele Simulator")
 
 root.bind('<KeyPress>', key_press)
 root.bind('<KeyRelease>', key_release)
